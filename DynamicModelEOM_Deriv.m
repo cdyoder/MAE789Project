@@ -5,7 +5,7 @@ clear all;
 mFileName = 'TRREx_SimFile.m';
 
 %% symbolic variables go here
-syms thetaB(t) gamma1(t) gamma2(t) gamma3(t) gamma4(t) ...
+syms thetaB(t) betaG gamma1(t) gamma2(t) gamma3(t) gamma4(t) ...
     ...
     M mL ...    % masses
     ...
@@ -42,6 +42,12 @@ OcB = [
     0 0 1
     ];
 
+OcG = [
+    cos(-betaG) -sin(-betaG) 0
+    sin(-betaG) cos(-betaG) 0
+    0 0 1
+    ];
+
 BcC1 = [
     cos(gamma1(t)) -sin(gamma1(t)) 0
     sin(gamma1(t)) cos(gamma1(t)) 0
@@ -72,6 +78,7 @@ OcC3 = simplify( OcB * BcC3 );
 OcC4 = simplify( OcB * BcC4 );
 
 BcO = transpose(OcB);
+GcO = transpose(OcG);
 C1cB = transpose(BcC1);
 C2cB = transpose(BcC2);
 C3cB = transpose(BcC3);
@@ -80,6 +87,9 @@ C1cO = transpose(OcC1);
 C2cO = transpose(OcC2);
 C3cO = transpose(OcC3);
 C4cO = transpose(OcC4);
+
+BcG = simplify(BcO * OcG);
+GcB = transpose(BcG);
 
 %% Angular Rates
 OcB_dot = simplify(diff(OcB,t));
@@ -164,8 +174,11 @@ rBO_C2 = VectRotation(C2cB,rBO_B);
 rBO_C3 = VectRotation(C3cB,rBO_B);
 rBO_C4 = VectRotation(C4cB,rBO_B);
 
+% rPB (G frame)
+rPB_G = [0; rCH; 0];
+
 % rPB (O frame)
-rPB_O = [0; rCH; 0];
+rPB_O = VectRotation(OcG,rPB_G);
 
 % rPB (B frame)
 rPB_B = VectRotation(BcO,rPB_O);
@@ -308,7 +321,7 @@ Fg_C2_O = Fg_C1_O;
 Fg_C3_O = Fg_C1_O;
 Fg_C4_O = Fg_C1_O;
 
-% Gravitational Forces in the O frame
+% Gravitational Forces in the B frame
 Fg_B_B = VectRotation(BcO,Fg_B_O);
 Fg_C1_B = VectRotation(BcO,Fg_C1_O);
 Fg_C2_B = VectRotation(BcO,Fg_C2_O);
@@ -316,20 +329,21 @@ Fg_C3_B = VectRotation(BcO,Fg_C3_O);
 Fg_C4_B = VectRotation(BcO,Fg_C4_O);
 
 % Normal Force in the O frame, and B frame
-Fn_P_O = [0; -Fn; 0];
-Fn_P_B = VectRotation(BcO,Fn_P_O);
+Fn_P_G = [0; Fn; 0];
+Fn_P_B = VectRotation(BcG,Fn_P_G);
+Fn_P_O = VectRotation(OcG,Fn_P_G);
 
 % Friction and Force Rolling Resistance (O frame)
-Ffr_P_O = [Ffr; 0; 0];
-Frr_P_O = [Frr; 0; 0];
+Ffr_P_G = [Ffr; 0; 0];
+Frr_P_G = [Frr; 0; 0];
 
 % Friction and Force Rolling Resistance (B frame)
-Ffr_P_B = VectRotation(BcO,Ffr_P_O);
-Frr_P_B = VectRotation(BcO,Frr_P_O);
+Ffr_P_B = VectRotation(BcG,Ffr_P_G);
+Frr_P_B = VectRotation(BcG,Frr_P_G);
 
 % Disturbance force (O-Frame and B-Frame)
-Fd_B_O = [Fd; 0; 0];
-Fd_B_B = VectRotation(BcO,Fd_B_O);
+Fd_B_G = [Fd; 0; 0];
+Fd_B_B = VectRotation(BcG,Fd_B_G);
 
 %% Derive Torque Terms
 % gravitational torques from each leg (B frame)
@@ -347,15 +361,25 @@ tau_fr_B_B = simplify(transpose(cross(transpose(rPB_B),transpose(Ffr_P_B))));
 %***********************************************************
 %***********************************************************
 SumF_B = simplify(Fg_B_B + Fg_C1_B + Fg_C2_B + Fg_C3_B + Fg_C4_B + Fn_P_B + Ffr_P_B ...
-    + Frr_P_B);
+    + Frr_P_B + Fd_B_B);
 
 SumTau_B = simplify(tau_C1_B_B + tau_C2_B_B + tau_C3_B_B + tau_C4_B_B + tau_fr_B_B);
 
-%% No Slip Condition on flat ground
-rBO_O_RHS = [
-    rCH*thetaB
-    -rCH
+
+%% EXTRA SUPPORT STUFF
+syms Crr Cf dthB_tigger
+% velocity of B wrt to O, in the G frame
+O_v_BO_G = VectRotation(GcB,O_v_BO_B);
+% Finding a numerically integratable Crr (cuts out to zero as angular
+% velocity gets really small)
+Crr_bar = Crr*tanh(str2sym('diff(thetaB(t), t)')/dthB_tigger);
+%RHS of equation for solving for rolling resistance  (G frame)
+Frr_EQ_G = [(-Crr_bar * abs(Fn) * (O_v_BO_G(1) / abs(O_v_BO_G(1))))
+    0
     0];
+%RHS of equation for solving for rolling resistance  (B frame)
+Frr_EQ_B = VectRotation(BcG,Frr_EQ_G);
+
 
 
 %% Substitute time derivatives for variable names for solving
@@ -451,12 +475,13 @@ SumF_B_sub = simplify(subs(SumF_B,regVect,subVect));
 SumTau_B_sub = simplify(subs(SumTau_B,regVect,subVect));
 %rBO_O_RHS_sub = simplify(subs(rBO_O_RHS_sub,regVect,subVect));
 
+Frr_EQ_B_sub = simplify(subs(Frr_EQ_B,regVect,subVect));
 
 
 %% Solve equations for the state derivatives and simplify them
-LHS_expr = [SumF_B_sub; SumTau_B_sub];
-RHS_expr = [sum_F_Bsys_B_sub; sum_tau_Bsys_B_sub];
-varMatrix = [ddthB ddrBOx ddrBOy];
+LHS_expr = [SumF_B_sub; SumTau_B_sub ; Frr_P_B];
+RHS_expr = [sum_F_Bsys_B_sub; sum_tau_Bsys_B_sub ; Frr_EQ_B_sub];
+varMatrix = [ddthB ddrBOx ddrBOy Frr Ffr Fn];
 
 stateDeriv_obj = solve(LHS_expr == RHS_expr,varMatrix);
 
@@ -464,6 +489,12 @@ StateDeriv_orig = [
     simplify(stateDeriv_obj.ddthB);
     simplify(stateDeriv_obj.ddrBOx);
     simplify(stateDeriv_obj.ddrBOy);
+    ];
+
+ForceDeriv_orig = [
+    simplify(stateDeriv_obj.Frr);
+    simplify(stateDeriv_obj.Ffr);
+    simplify(stateDeriv_obj.Fn);
     ];
 
 
@@ -502,6 +533,10 @@ EqVect_LHS = transpose([ ...
     str2sym('xdot(13)') str2sym('xdot(14)')
     ]);
 
+ForceEQVect_LHS = transpose([ ...
+    str2sym('Frr') str2sym('Ffr') str2sym('Fn') ...
+    ]);
+
 StateDeriv_SS = subs(StateDeriv_orig,regVect,subVect);
 
 % build the system of state derivative equations as they would go in an
@@ -523,7 +558,14 @@ EQVect_RHS = [
     str2sym('u(4)')
     ];
 
+ForceEQVect_RHS = [
+    ForceDeriv_orig(1)
+    ForceDeriv_orig(2)
+    ForceDeriv_orig(3)
+    ];
+
 EQString = append(string(EqVect_LHS), " = ", string(EQVect_RHS));
+ForceEQ_string = append(string(ForceEQVect_LHS), " = ", string(ForceEQVect_RHS));
 
 
 %% Finally, write the basic M-file
@@ -531,12 +573,14 @@ EQString = append(string(EqVect_LHS), " = ", string(EQVect_RHS));
     
     fprintf(FID,"function [xdot] = TRREx_SimFile(t,x,u)\n\n");
     
-    fprintf(FID,"\tforces = getForces(t,x,u);\n\n");
     
-    fprintf(FID,"\tFn = forces(1);\n");
-    fprintf(FID,"\tFfr  = forces(2);\n");
-    fprintf(FID,"\tFrr  = forces(3);\n");
-    fprintf(FID,"\tFd  = forces(4);\n\n");
+
+    fprintf(FID,"\tFd  = getDisturbance(t,x,u);\n\n");
+    
+    for i = 1:size(ForceEQ_string,1)
+        fprintf(FID,"\t%s;\n",ForceEQ_string(i,:));
+    end
+    fprintf(FID,"\n\n");
     
     for i = 1:size(EQString,1)
         fprintf(FID,"\t%s;\n",EQString(i,:));
