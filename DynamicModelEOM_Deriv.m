@@ -1,5 +1,7 @@
 %% Clear the workspace
 clear all;
+clc
+close all
 
 %% Some basic Inputs
 mFileName = 'TRREx_SimFile.m';
@@ -33,6 +35,8 @@ syms thetaB(t) gamma1(t) gamma2(t) gamma3(t) gamma4(t)...
     ...
     Fn Ffr Frr Fd...        % force terms which can be calculated in a different
                             % function
+
+disp('Sims done');                  
 
 %% Rotation Matrices
 
@@ -80,6 +84,8 @@ C1cO = transpose(OcC1);
 C2cO = transpose(OcC2);
 C3cO = transpose(OcC3);
 C4cO = transpose(OcC4);
+
+disp('Rotation matrices done');    
 
 %% Angular Rates
 OcB_dot = simplify(diff(OcB,t));
@@ -148,6 +154,8 @@ O_alpha_C1 = simplify(diff(O_omega_C1_C1));
 O_alpha_C2 = simplify(diff(O_omega_C2_C2));
 O_alpha_C3 = simplify(diff(O_omega_C3_C3));
 O_alpha_C4 = simplify(diff(O_omega_C4_C4));
+
+disp('Omega and alpha done');    
 
 
 %% Position Vectors
@@ -233,6 +241,8 @@ O_a_C2B_B = VectRotation(BcC2,O_a_C2B_C2);
 O_a_C3B_B = VectRotation(BcC3,O_a_C3B_C3);
 O_a_C4B_B = VectRotation(BcC4,O_a_C4B_C4);
 
+disp('Accelerations done');
+
 %% Moments of Inertia
 
 % Chassis MOI (B frame)
@@ -290,6 +300,8 @@ O_v_CMB_B = simplify((derp1 + derp2 + derp3 + derp4) / Mtotal);
 
 addlTerm_B = simplify(transpose(Mtotal*cross(transpose(O_v_BO_B), transpose(O_v_CMB_B))));
 
+disp('oddt oHob done');
+
 %%  Final sums of ext forces and sums of ext moments expressions (RHS)
 %***************************************************************
 %***************************************************************
@@ -331,6 +343,8 @@ Frr_P_B = VectRotation(BcO,Frr_P_O);
 Fd_B_O = [Fd; 0; 0];
 Fd_B_B = VectRotation(BcO,Fd_B_O);
 
+disp('Forces done');
+
 %% Derive Torque Terms
 % gravitational torques from each leg (B frame)
 tau_C1_B_B = simplify(transpose(cross(transpose(rC1B_B),transpose(Fg_C1_B))));
@@ -341,6 +355,7 @@ tau_C4_B_B = simplify(transpose(cross(transpose(rC4B_B),transpose(Fg_C4_B))));
 % Friction Torque Term (B-frame)
 tau_fr_B_B = simplify(transpose(cross(transpose(rPB_B),transpose(Ffr_P_B))));
 
+disp('Tau done');
 
 %% Build Sum of Forces and Sum of Moments LHS
 %***********************************************************
