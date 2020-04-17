@@ -7,7 +7,7 @@ close all
 mFileName = 'TRREx_SimFile.m';
 
 %% symbolic variables go here
-syms thetaB(t) gamma1(t) gamma2(t) gamma3(t) gamma4(t)...
+syms t thetaB(t) gamma1(t) gamma2(t) gamma3(t) gamma4(t)...
     ...
     M mL ...    % masses
     ...
@@ -29,6 +29,8 @@ syms thetaB(t) gamma1(t) gamma2(t) gamma3(t) gamma4(t)...
     I_Ch_yx I_Ch_yy I_Ch_yz ...
     I_Ch_zx I_Ch_zy I_Ch_zz ...
     ...
+    Wx(t) Wy(t) Wz(t) ...
+    ...
     I_L_xx I_L_xy I_L_xz ...
     I_L_yx I_L_yy I_L_yz ...
     I_L_zx I_L_zy I_L_zz ...
@@ -41,32 +43,32 @@ disp('Sims done');
 %% Rotation Matrices
 
 OcB = [
-    cos(thetaB(t)) -sin(thetaB(t)) 0
-    sin(thetaB(t)) cos(thetaB(t)) 0
+    cos(thetaB) -sin(thetaB) 0
+    sin(thetaB) cos(thetaB) 0
     0 0 1
     ];
 
 BcC1 = [
-    cos(gamma1(t)) -sin(gamma1(t)) 0
-    sin(gamma1(t)) cos(gamma1(t)) 0
+    cos(gamma1) -sin(gamma1) 0
+    sin(gamma1) cos(gamma1) 0
     0 0 1
     ];
 
 BcC2 = [
-    cos(gamma2(t)) -sin(gamma2(t)) 0
-    sin(gamma2(t)) cos(gamma2(t)) 0
+    cos(gamma2) -sin(gamma2) 0
+    sin(gamma2) cos(gamma2) 0
     0 0 1
     ];
 
 BcC3 = [
-    cos(gamma3(t)) -sin(gamma3(t)) 0
-    sin(gamma3(t)) cos(gamma3(t)) 0
+    cos(gamma3) -sin(gamma3) 0
+    sin(gamma3) cos(gamma3) 0
     0 0 1
     ];
 
 BcC4 = [
-    cos(gamma4(t)) -sin(gamma4(t)) 0
-    sin(gamma4(t)) cos(gamma4(t)) 0
+    cos(gamma4) -sin(gamma4) 0
+    sin(gamma4) cos(gamma4) 0
     0 0 1
     ];
 
@@ -89,67 +91,96 @@ disp('Rotation matrices done');
 
 %% Angular Rates
 OcB_dot = simplify(diff(OcB,t));
-BcC1_dot = simplify(diff(BcC1,t));
-BcC2_dot = simplify(diff(BcC2,t));
-BcC3_dot = simplify(diff(BcC3,t));
-BcC4_dot = simplify(diff(BcC4,t));
-OcC1_dot = simplify(diff(OcC1,t));
-OcC2_dot = simplify(diff(OcC2,t));
-OcC3_dot = simplify(diff(OcC3,t));
-OcC4_dot = simplify(diff(OcC4,t));
+% BcC1_dot = simplify(diff(BcC1,t));
+% BcC2_dot = simplify(diff(BcC2,t));
+% BcC3_dot = simplify(diff(BcC3,t));
+% BcC4_dot = simplify(diff(BcC4,t));
+C1cB_dot = diff(C1cB, t);
+C2cB_dot = diff(C2cB, t);
+C3cB_dot = diff(C3cB, t);
+C4cB_dot = diff(C4cB, t);
+OcC1_dot = diff(OcC1, t);
+OcC2_dot = diff(OcC2, t);
+OcC3_dot = diff(OcC3, t);
+OcC4_dot = diff(OcC4, t);
+BcC1_dot = diff(BcC1, t);
+BcC2_dot = diff(BcC2, t);
+BcC3_dot = diff(BcC3, t);
+BcC4_dot = diff(BcC4, t);
 
-O_omega_B_x_B = [0 0 1]*BcO*OcB_dot*[0;1;0];
-O_omega_B_y_B = [1 0 0]*BcO*OcB_dot*[0;0;1];
-O_omega_B_z_B = [0 1 0]*BcO*OcB_dot*[1;0;0];
+% BcO is matrix from B to O
+% used with OwB velocities
+% from definition, OwB = []*BcO*OcB_d*[]
+mat0 = BcO*OcB_dot;
+O_omega_B_x_B = [0 0 1]*mat0*[0;1;0];
+O_omega_B_y_B = [1 0 0]*mat0*[0;0;1];
+O_omega_B_z_B = [0 1 0]*mat0*[1;0;0];
 
-B_omega_C1_x_C1 = [0 0 1]*BcC1*BcC1_dot*[0;1;0];
-B_omega_C1_y_C1 = [1 0 0]*BcC1*BcC1_dot*[0;0;1];
-B_omega_C1_z_C1 = [0 1 0]*BcC1*BcC1_dot*[1;0;0];
+% BwC1 = []*C1cB*BcC1_dot*[]
+mat1 = C1cB*BcC1_dot;
+B_omega_C1_x_C1 = [0 0 1]*mat1*[0;1;0];
+B_omega_C1_y_C1 = [1 0 0]*mat1*[0;0;1];
+B_omega_C1_z_C1 = [0 1 0]*mat1*[1;0;0];
 
-B_omega_C2_x_C2 = [0 0 1]*BcC2*BcC2_dot*[0;1;0];
-B_omega_C2_y_C2 = [1 0 0]*BcC2*BcC2_dot*[0;0;1];
-B_omega_C2_z_C2 = [0 1 0]*BcC2*BcC2_dot*[1;0;0];
+% BwC1 = []*C1cB*BcC1_dot*[]
+mat2 = C2cB*BcC2_dot;
+B_omega_C2_x_C2 = [0 0 1]*mat2*[0;1;0];
+B_omega_C2_y_C2 = [1 0 0]*mat2*[0;0;1];
+B_omega_C2_z_C2 = [0 1 0]*mat2*[1;0;0];
 
-B_omega_C3_x_C3 = [0 0 1]*BcC3*BcC3_dot*[0;1;0];
-B_omega_C3_y_C3 = [1 0 0]*BcC3*BcC3_dot*[0;0;1];
-B_omega_C3_z_C3 = [0 1 0]*BcC3*BcC3_dot*[1;0;0];
+% BwC1 = []*C1cB*BcC1_dot*[]
+mat3 = C3cB*BcC3_dot;
+B_omega_C3_x_C3 = [0 0 1]*mat3*[0;1;0];
+B_omega_C3_y_C3 = [1 0 0]*mat3*[0;0;1];
+B_omega_C3_z_C3 = [0 1 0]*mat3*[1;0;0];
 
-B_omega_C4_x_C4 = [0 0 1]*BcC4*BcC4_dot*[0;1;0];
-B_omega_C4_y_C4 = [1 0 0]*BcC4*BcC4_dot*[0;0;1];
-B_omega_C4_z_C4 = [0 1 0]*BcC4*BcC4_dot*[1;0;0];
+% BwC1 = []*C1cB*BcC1_dot*[]
+mat4 = C4cB*BcC4_dot;
+B_omega_C4_x_C4 = [0 0 1]*mat4*[0;1;0];
+B_omega_C4_y_C4 = [1 0 0]*mat4*[0;0;1];
+B_omega_C4_z_C4 = [0 1 0]*mat4*[1;0;0];
 
-O_omega_C1_x_C1 = [0 0 1]*OcC1*OcC1_dot*[0;1;0];
-O_omega_C1_y_C1 = [1 0 0]*OcC1*OcC1_dot*[0;0;1];
-O_omega_C1_z_C1 = [0 1 0]*OcC1*OcC1_dot*[1;0;0];
+% OwC1 = {}*C1cO*OcC1_dot*[]
+mat5 = C1cO*OcC1_dot;
+O_omega_C1_x_C1 = [0 0 1]*mat5*[0;1;0];
+O_omega_C1_y_C1 = [1 0 0]*mat5*[0;0;1];
+O_omega_C1_z_C1 = [0 1 0]*mat5*[1;0;0];
 
-O_omega_C2_x_C2 = [0 0 1]*OcC2*OcC2_dot*[0;1;0];
-O_omega_C2_y_C2 = [1 0 0]*OcC2*OcC2_dot*[0;0;1];
-O_omega_C2_z_C2 = [0 1 0]*OcC2*OcC2_dot*[1;0;0];
+% OwC1 = {}*C1cO*OcC1_dot*[]
+mat6 = C2cO*OcC2_dot;
+O_omega_C2_x_C2 = [0 0 1]*mat6*[0;1;0];
+O_omega_C2_y_C2 = [1 0 0]*mat6*[0;0;1];
+O_omega_C2_z_C2 = [0 1 0]*mat6*[1;0;0];
 
-O_omega_C3_x_C3 = [0 0 1]*OcC3*OcC3_dot*[0;1;0];
-O_omega_C3_y_C3 = [1 0 0]*OcC3*OcC3_dot*[0;0;1];
-O_omega_C3_z_C3 = [0 1 0]*OcC3*OcC3_dot*[1;0;0];
+% OwC1 = {}*C1cO*OcC1_dot*[]
+mat7 = C3cO*OcC3_dot;
+O_omega_C3_x_C3 = [0 0 1]*mat7*[0;1;0];
+O_omega_C3_y_C3 = [1 0 0]*mat7*[0;0;1];
+O_omega_C3_z_C3 = [0 1 0]*mat7*[1;0;0];
 
-O_omega_C4_x_C4 = [0 0 1]*OcC4*OcC4_dot*[0;1;0];
-O_omega_C4_y_C4 = [1 0 0]*OcC4*OcC4_dot*[0;0;1];
-O_omega_C4_z_C4 = [0 1 0]*OcC4*OcC4_dot*[1;0;0];
+% OwC1 = {}*C1cO*OcC1_dot*[]
+mat8 = C4cO*OcC4_dot;
+O_omega_C4_x_C4 = [0 0 1]*mat8*[0;1;0];
+O_omega_C4_y_C4 = [1 0 0]*mat8*[0;0;1];
+O_omega_C4_z_C4 = [0 1 0]*mat8*[1;0;0];
 
-O_omega_B_B = simplify(transpose([O_omega_B_x_B O_omega_B_y_B O_omega_B_z_B]));
+
+O_omega_B_B = transpose([O_omega_B_x_B O_omega_B_y_B O_omega_B_z_B]);
 O_alpha_B = simplify(diff(O_omega_B_B));
 
-B_omega_C1_C1 = simplify(transpose([B_omega_C1_x_C1 B_omega_C1_y_C1 B_omega_C1_z_C1]));
-B_omega_C2_C2 = simplify(transpose([B_omega_C2_x_C2 B_omega_C2_y_C2 B_omega_C2_z_C2]));
-B_omega_C3_C3 = simplify(transpose([B_omega_C3_x_C3 B_omega_C3_y_C3 B_omega_C3_z_C3]));
-B_omega_C4_C4 = simplify(transpose([B_omega_C4_x_C4 B_omega_C4_y_C4 B_omega_C4_z_C4]));
+B_omega_C1_C1 = transpose([B_omega_C1_x_C1 B_omega_C1_y_C1 B_omega_C1_z_C1]);
+B_omega_C2_C2 = transpose([B_omega_C2_x_C2 B_omega_C2_y_C2 B_omega_C2_z_C2]);
+B_omega_C3_C3 = transpose([B_omega_C3_x_C3 B_omega_C3_y_C3 B_omega_C3_z_C3]);
+B_omega_C4_C4 = transpose([B_omega_C4_x_C4 B_omega_C4_y_C4 B_omega_C4_z_C4]);
 B_alpha_C1 = simplify(diff(B_omega_C1_C1));
 B_alpha_C2 = simplify(diff(B_omega_C2_C2));
 B_alpha_C3 = simplify(diff(B_omega_C3_C3));
 B_alpha_C4 = simplify(diff(B_omega_C4_C4));
 
-O_omega_C1_C1 = simplify(transpose([O_omega_C1_x_C1 O_omega_C1_y_C1 O_omega_C1_z_C1]));
-O_omega_C2_C2 = simplify(transpose([O_omega_C2_x_C2 O_omega_C2_y_C2 O_omega_C2_z_C2]));
-O_omega_C3_C3 = simplify(transpose([O_omega_C3_x_C3 O_omega_C3_y_C3 O_omega_C3_z_C3]));
-O_omega_C4_C4 = simplify(transpose([O_omega_C4_x_C4 O_omega_C4_y_C4 O_omega_C4_z_C4]));
+O_omega_C1_C1 = transpose([O_omega_C1_x_C1 O_omega_C1_y_C1 O_omega_C1_z_C1]);
+O_omega_C2_C2 = transpose([O_omega_C2_x_C2 O_omega_C2_y_C2 O_omega_C2_z_C2]);
+O_omega_C3_C3 = transpose([O_omega_C3_x_C3 O_omega_C3_y_C3 O_omega_C3_z_C3]);
+O_omega_C4_C4 = transpose([O_omega_C4_x_C4 O_omega_C4_y_C4 O_omega_C4_z_C4]);
 O_alpha_C1 = simplify(diff(O_omega_C1_C1));
 O_alpha_C2 = simplify(diff(O_omega_C2_C2));
 O_alpha_C3 = simplify(diff(O_omega_C3_C3));
@@ -161,7 +192,7 @@ disp('Omega and alpha done');
 %% Position Vectors
 
 % rBO (B frame)
-rBO_B = transpose([rBO_x_B(t) rBO_y_B(t) rBO_z_B(t)]);
+rBO_B = transpose([rBO_x_B rBO_y_B rBO_z_B]);
 
 % rBO (O frame)
 rBO_O = VectRotation(OcB,rBO_B);
@@ -215,26 +246,26 @@ rC4O_C4 = simplify(rBO_C4 + rC4B_C4);
 
 %% Velocity Vectors
 
-O_v_C1O_C1 = firstTransport(rC1O_C1,O_omega_C1_C1);
-O_v_C2O_C2 = firstTransport(rC2O_C2,O_omega_C2_C2);
-O_v_C3O_C3 = firstTransport(rC3O_C3,O_omega_C3_C3);
-O_v_C4O_C4 = firstTransport(rC4O_C4,O_omega_C4_C4);
+O_v_C1O_C1 = firstTransport(rC1O_C1,O_omega_C1_C1, t);
+O_v_C2O_C2 = firstTransport(rC2O_C2,O_omega_C2_C2, t);
+O_v_C3O_C3 = firstTransport(rC3O_C3,O_omega_C3_C3, t);
+O_v_C4O_C4 = firstTransport(rC4O_C4,O_omega_C4_C4, t);
 
-O_v_C1B_B = firstTransport(rC1B_B,O_omega_B_B);
-O_v_C2B_B = firstTransport(rC2B_B,O_omega_B_B);
-O_v_C3B_B = firstTransport(rC3B_B,O_omega_B_B);
-O_v_C4B_B = firstTransport(rC4B_B,O_omega_B_B);
+O_v_C1B_B = firstTransport(rC1B_B,O_omega_B_B, t);
+O_v_C2B_B = firstTransport(rC2B_B,O_omega_B_B, t);
+O_v_C3B_B = firstTransport(rC3B_B,O_omega_B_B, t);
+O_v_C4B_B = firstTransport(rC4B_B,O_omega_B_B, t);
 
-O_v_BO_B = firstTransport(rBO_B,O_omega_B_B);
+O_v_BO_B = firstTransport(rBO_B,O_omega_B_B, t);
 
 %% Acceleration Vectors
 
-O_a_BO_B = secondTransport(rBO_B, O_omega_B_B, O_alpha_B);
+O_a_BO_B = secondTransport(rBO_B, O_omega_B_B, O_alpha_B, t);
 
-O_a_C1B_C1 = secondTransport(rC1B_C1, O_omega_C1_C1, O_alpha_C1);
-O_a_C2B_C2 = secondTransport(rC2B_C2, O_omega_C2_C2, O_alpha_C2);
-O_a_C3B_C3 = secondTransport(rC3B_C3, O_omega_C3_C3, O_alpha_C3);
-O_a_C4B_C4 = secondTransport(rC4B_C4, O_omega_C4_C4, O_alpha_C4);
+O_a_C1B_C1 = secondTransport(rC1B_C1, O_omega_C1_C1, O_alpha_C1, t);
+O_a_C2B_C2 = secondTransport(rC2B_C2, O_omega_C2_C2, O_alpha_C2, t);
+O_a_C3B_C3 = secondTransport(rC3B_C3, O_omega_C3_C3, O_alpha_C3, t);
+O_a_C4B_C4 = secondTransport(rC4B_C4, O_omega_C4_C4, O_alpha_C4, t);
 
 O_a_C1B_B = VectRotation(BcC1,O_a_C1B_C1);
 O_a_C2B_B = VectRotation(BcC2,O_a_C2B_C2);
@@ -273,11 +304,11 @@ gamma4_C4 = simplify((I_L4_C4 * O_omega_C4_C4) + transpose((mL * cross(transpose
 gammaB_B = simplify(I_Ch_B * O_omega_B_B);
 
 % take O-derivative of each term
-d_gamma1_C1 = firstTransport(gamma1_C1, O_omega_C1_C1);
-d_gamma2_C2 = firstTransport(gamma2_C2, O_omega_C2_C2);
-d_gamma3_C3 = firstTransport(gamma3_C3, O_omega_C3_C3);
-d_gamma4_C4 = firstTransport(gamma4_C4, O_omega_C4_C4);
-d_gammaB_B = firstTransport(gammaB_B, O_omega_B_B);
+d_gamma1_C1 = firstTransport(gamma1_C1, O_omega_C1_C1, t);
+d_gamma2_C2 = firstTransport(gamma2_C2, O_omega_C2_C2, t);
+d_gamma3_C3 = firstTransport(gamma3_C3, O_omega_C3_C3, t);
+d_gamma4_C4 = firstTransport(gamma4_C4, O_omega_C4_C4, t);
+d_gammaB_B = firstTransport(gammaB_B, O_omega_B_B, t);
 
 % rotate them all into a common frame (B-frame)
 d_gamma1_B = VectRotation(BcC1,d_gamma1_C1);
@@ -308,6 +339,7 @@ disp('oddt oHob done');
 %***************************************************************
 sum_tau_Bsys_B = ddt_O_O_h_Bsys_B + addlTerm_B;
 
+% OLD TERMS
 sum_F_Bsys_B = (Mtotal*O_a_BO_B) + mL*(O_a_C1B_B + O_a_C2B_B + O_a_C3B_B + ...
     O_a_C4B_B);
 
@@ -385,7 +417,7 @@ Frr_expr = Frr == Crr_bar * abs(Fn);
 %Need O_v_BO_O to describe direction of Rolling Resistance
 O_v_BO_O = VectRotation(OcB,O_v_BO_B);
 %Equation for Finding Ffr (no slip condition)
-noSlip_expr = rCH * str2sym('diff(thetaB(t), t)') == O_v_BO_O(1);
+noSlip_expr = rCH * str2sym('diff(thetaB, t)') == O_v_BO_O(1);
 
 Force_expr = [
     Fn_expr
@@ -407,15 +439,15 @@ syms thB dthB ddthB...
         
 % vector holding the original syms to be replaced
 regVect = [...
-    str2sym('thetaB(t)') str2sym('diff(thetaB(t), t)') str2sym('diff(thetaB(t), t, t)') ...
-    str2sym('gamma1(t)') str2sym('diff(gamma1(t), t)') str2sym('diff(gamma1(t), t, t)') ...
-    str2sym('gamma2(t)') str2sym('diff(gamma2(t), t)') str2sym('diff(gamma2(t), t, t)') ...
-    str2sym('gamma3(t)') str2sym('diff(gamma3(t), t)') str2sym('diff(gamma3(t), t, t)') ...
-    str2sym('gamma4(t)') str2sym('diff(gamma4(t), t)') str2sym('diff(gamma4(t), t, t)') ...
+    str2sym('thetaB') str2sym('diff(thetaB, t)') str2sym('diff(thetaB, t, t)') ...
+    str2sym('gamma1') str2sym('diff(gamma1, t)') str2sym('diff(gamma1, t, t)') ...
+    str2sym('gamma2') str2sym('diff(gamma2, t)') str2sym('diff(gamma2, t, t)') ...
+    str2sym('gamma3') str2sym('diff(gamma3, t)') str2sym('diff(gamma3, t, t)') ...
+    str2sym('gamma4') str2sym('diff(gamma4, t)') str2sym('diff(gamma4, t, t)') ...
     ...
-    str2sym('rBO_x_B(t)') str2sym('diff(rBO_x_B(t), t)') str2sym('diff(rBO_x_B(t), t, t)') ...
-    str2sym('rBO_y_B(t)') str2sym('diff(rBO_y_B(t), t)') str2sym('diff(rBO_y_B(t), t, t)') ...
-    str2sym('rBO_z_B(t)') str2sym('diff(rBO_z_B(t), t)') str2sym('diff(rBO_z_B(t), t, t)') ...
+    str2sym('rBO_x_B') str2sym('diff(rBO_x_B, t)') str2sym('diff(rBO_x_B, t, t)') ...
+    str2sym('rBO_y_B') str2sym('diff(rBO_y_B, t)') str2sym('diff(rBO_y_B, t, t)') ...
+    str2sym('rBO_z_B') str2sym('diff(rBO_z_B, t)') str2sym('diff(rBO_z_B, t, t)') ...
     ...
     str2sym('M') str2sym('mL') str2sym('g') ...    % masses
     ...
@@ -478,17 +510,26 @@ subVect = [...
 
 % now use subs to replace variables for any expression
     %RHS
-sum_F_Bsys_B_sub = simplify(subs(sum_F_Bsys_B,regVect,subVect));
-sum_tau_Bsys_B_sub = simplify(subs(sum_tau_Bsys_B,regVect,subVect));
+sum_F_Bsys_B_sub(1) = simplify(subs(sum_F_Bsys_B(1),regVect,subVect));
+sum_F_Bsys_B_sub(2) = simplify(subs(sum_F_Bsys_B(2),regVect,subVect));
+sum_F_Bsys_B_sub(3) = simplify(subs(sum_F_Bsys_B(3),regVect,subVect));
+sum_tau_Bsys_B_sub(1) = simplify(subs(sum_tau_Bsys_B(1),regVect,subVect));
+sum_tau_Bsys_B_sub(2) = simplify(subs(sum_tau_Bsys_B(2),regVect,subVect));
+sum_tau_Bsys_B_sub(3) = simplify(subs(sum_tau_Bsys_B(3),regVect,subVect));
 %rBO_O_sub = simplify(subs(rBO_O,regVect,subVect));
     %LHS
-SumF_B_sub = simplify(subs(SumF_B,regVect,subVect));
-SumTau_B_sub = simplify(subs(SumTau_B,regVect,subVect));
+SumF_B_sub(1) = simplify(subs(SumF_B(1),regVect,subVect));
+SumF_B_sub(2) = simplify(subs(SumF_B(2),regVect,subVect));
+SumF_B_sub(3) = simplify(subs(SumF_B(3),regVect,subVect));
+SumTau_B_sub(1) = simplify(subs(SumTau_B(1),regVect,subVect));
+SumTau_B_sub(2) = simplify(subs(SumTau_B(2),regVect,subVect));
+SumTau_B_sub(3) = simplify(subs(SumTau_B(3),regVect,subVect));
 %rBO_O_RHS_sub = simplify(subs(rBO_O_RHS_sub,regVect,subVect));
 
 Force_expr_sub = simplify(subs(Force_expr,regVect,subVect));
 
 %% Solve equations for the state derivatives and simplify them
+keyboard
 LHS_expr = [SumF_B_sub(1:2); SumTau_B_sub(3)];
 RHS_expr = [sum_F_Bsys_B_sub(1:2); sum_tau_Bsys_B_sub(3)];
 final_expr = [
@@ -592,15 +633,15 @@ function [rotatedVect] = VectRotation(rotationMat,vect2Rotate)
     rotatedVect = simplify(rotationMat * vect2Rotate);
 end
 
-function [derivVect] = firstTransport(q,omega)
-    syms t;
+function [derivVect] = firstTransport(q,omega, t)
+    % syms t;
     dq = simplify(diff(q,t));
     crossProd = simplify(transpose(cross(transpose(omega),transpose(q))));
     derivVect = simplify(dq + crossProd);
 end
 
-function [derivVect] = secondTransport(q,omega,alpha)
-    syms t;
+function [derivVect] = secondTransport(q,omega,alpha, t)
+    % syms t;
     ddq = simplify(diff(q,t,2));
     dq = simplify(diff(q,t));
     crossProd_1 = simplify(transpose(2*cross(transpose(omega),transpose(dq))));
@@ -609,4 +650,12 @@ function [derivVect] = secondTransport(q,omega,alpha)
     crossProd_3 = simplify(transpose(cross(transpose(omega),transpose(crossProd_3_inner))));
     
     derivVect = simplify(ddq + crossProd_1 + crossProd_2 + crossProd_3);
+end
+
+function [prod] = CrossMe(v1, v2)
+    % function to perform the cross product on symbolics
+    prod = sym('prod', [3, 1]);
+    prod(1) = v1(2)*v2(3) - v1(3)*v2(2);
+    prod(2) = v1(3)*v2(1) - v1(1)*v2(3);
+    prod(3) = v1(1)*v2(2) - v1(2)*v2(1);
 end
