@@ -1,5 +1,5 @@
-% function [xdot] = TRREx_SimFile_rev1(t,x,Crr_nom,th_trig,Gam1dd,Gam2dd,Gam3dd,Gam4dd,flag)
-function [xdot] = TRREx_SimFile_rev1(t,x,Crr_nom,th_trig,flag)
+function [xdot] = TRREx_SimFile_rev1(t,x,Crr_nom,th_trig,Gam1dd,Gam2dd,Gam3dd,Gam4dd,flag)
+% function [xdot] = TRREx_SimFile_rev1(t,x,Crr_nom,th_trig,flag)
 
 % Variable schedule
 % x(1) = thB        % x(5) = gam2       %  x(9) = gam4
@@ -9,6 +9,8 @@ function [xdot] = TRREx_SimFile_rev1(t,x,Crr_nom,th_trig,flag)
 
 % Preallocate
 xdot = NaN(length(x), 1);
+
+% keyboard
 
 % Mass inputs
 u = zeros(4, 1);
