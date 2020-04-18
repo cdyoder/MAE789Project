@@ -6,7 +6,8 @@ fclose('all');
 
 %{
 To do;
-1. Need to 
+1. Need to fix math error in the code
+2. Need to change the differene in gamma angles for trrex
 %}
 
 % derive eoms
@@ -17,8 +18,10 @@ statesname = 'TRREx_SimFile_rev2';           % file to make
 % prevent overwrite
 if exist([statesname, '.m'], "file") ~= 2
     tic
+    disp('States file not found, thus starting derivation');
     statesfile = DeriveEOMS(statesname);
     t5 = toc
+    disp('Derivation complete');
 end
 
 % variable schedule
@@ -32,7 +35,7 @@ end
 xics = zeros(10, 1);
 
 % time
-tv = 0:0.05:20;
+tv = 0:0.05:1;
 
 % parameters
 Crr_nom = 0.07;
@@ -51,45 +54,120 @@ optz = odeset('Stats', 'on');
 tic
 % [~, outsB] = ode45(@(tt, xx)statesname(tt, xx, Crr_nom, th_trig, ...
 %     Gam1dd, Gam2dd, Gam3dd, Gam4dd, 0), tv, xics);
-[~, outsB] = ode45(@(tt, xx)TRREx_SimFile_rev2(tt, xx, Crr_nom, th_trig, ...
+[ta, outsB] = ode45(@(tt, xx)TRREx_SimFile_rev2(tt, xx, Crr_nom, th_trig, ...
     Gam1dd, Gam2dd, Gam3dd, Gam4dd,0), tv, xics, optz);
 t6 = toc
 disp('Simulation done');
 
 % get quantities afterwards
-Ff = NaN(length(tv), 1);
+Ff = NaN(length(ta), 1);
 Frr = Ff;
 Fn = Ff;
-for i1 = 1:length(tv)
+for i1 = 1:length(ta)
     xics = outsB(i1, :);
-    xd = TRREx_SimFile_rev2(tv(i1), xics, Crr_nom, th_trig, ...
+    xd = TRREx_SimFile_rev2(ta(i1), xics, Crr_nom, th_trig, ...
         Gam1dd, Gam2dd, Gam3dd, Gam4dd, 1);
-    Ff(i1) = xd.Ff;
+    Ff(i1) = xd.Ffr;
     Fn(i1) = xd.Fn;
     Frr(i1) = xd.Frr;
 end
 
-% plot
+
+
+
+% plot setup
+figdir = 'bin';
 set(groot, 'defaultTextInterpreter', 'latex');
 set(groot, 'defaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'defaultFigureUnits', 'inches');
+pp = [0, 0, 3, 2.5];
+fs = 8;
+
+
+% plot of angle, angle dot
 figure('color', 'w');
+set(gcf, 'PaperUnits', 'inches');
+set(gcf, 'PaperSize', pp(3:4));
+set(gcf, 'PaperPosition', pp);
+set(gcf, 'Position', [3, 3, pp(3), pp(4)]);
 hold on
 yyaxis left
-plot(tv, outsB(:, 1)*180/pi);
-ylabel('Angle [deg]', 'interpreter', 'latex');
+plot(ta, outsB(:, 1)*180/pi);
+ylabel('$\theta$ [deg]', 'interpreter', 'latex');
 yyaxis right 
-plot(tv, outsB(:, 2)*180/pi);
+plot(ta, outsB(:, 2)*180/pi);
 xlabel('Time [s]', 'interpreter', 'latex');
-ylabel('Angle rate [deg/s]', 'interpreter', 'latex');
+ylabel('$\dot{\theta}$ [deg/s]', 'interpreter', 'latex');
 grid on
+set(gca, 'FontSize', fs);
+figname = 'angles';
+savefig(gcf, fullfile(figdir, [figname, '.fig']));
+print(fullfile(figdir, figname), '-dpdf');
+print(fullfile(figdir, figname), '-dpng');
 
+
+% plot of x, xdot
+rCH = 0.3937;
 figure('color', 'w');
+set(gcf, 'PaperUnits', 'inches');
+set(gcf, 'PaperSize', pp(3:4));
+set(gcf, 'PaperPosition', pp);
+set(gcf, 'Position', [3, 3, pp(3), pp(4)]);
+
 hold on
-plot(tv, outsB(:, 3)*180/pi);
-plot(tv, outsB(:, 5)*180/pi);
-plot(tv, outsB(:, 7)*180/pi);
-plot(tv, outsB(:, 9)*180/pi);
+yyaxis left
+plot(ta, outsB(:, 1)*rCH);
+ylabel('$x$ [m]', 'interpreter', 'latex');
+yyaxis right 
+plot(ta, outsB(:, 2)*rCH);
+xlabel('Time [s]', 'interpreter', 'latex');
+ylabel('$\dot{x}$ [m/s]', 'interpreter', 'latex');
+grid on
+set(gca, 'FontSize', fs);
+figname = 'posn';
+savefig(gcf, fullfile(figdir, [figname, '.fig']));
+print(fullfile(figdir, figname), '-dpdf');
+print(fullfile(figdir, figname), '-dpng');
+
+
+% plot of arm angles
+figure('color', 'w');
+set(gcf, 'PaperUnits', 'inches');
+set(gcf, 'PaperSize', pp(3:4));
+set(gcf, 'PaperPosition', pp);
+set(gcf, 'Position', [3, 3, pp(3), pp(4)]);
+
+hold on
+plot(ta, outsB(:, 3)*180/pi);
+plot(ta, outsB(:, 5)*180/pi);
+plot(ta, outsB(:, 7)*180/pi);
+plot(ta, outsB(:, 9)*180/pi);
 xlabel('Time [s]', 'interpreter', 'latex');
 ylabel('Angle [deg]', 'interpreter', 'latex');
 grid on
 legend('$\gamma_1$', '$\gamma_2$', '$\gamma_3$', '$\gamma_4$', 'interpreter', 'latex');
+figname = 'arms';
+savefig(gcf, fullfile(figdir, [figname, '.fig']));
+print(fullfile(figdir, figname), '-dpdf');
+print(fullfile(figdir, figname), '-dpng');
+
+
+% plot of forces
+figure('color', 'w');
+set(gcf, 'PaperUnits', 'inches');
+set(gcf, 'PaperSize', pp(3:4));
+set(gcf, 'PaperPosition', pp);
+set(gcf, 'Position', [3, 3, pp(3), pp(4)]);
+
+hold on
+plot(ta, Ff);
+plot(ta, Fn);
+plot(ta, Frr);
+xlabel('Time [s]', 'interpreter', 'latex');
+ylabel('Force [N]', 'interpreter', 'latex');
+grid on
+legend('$F_f$', '$F_N$', '$F_{rr}$', 'interpreter', 'latex');
+figname = 'forces';
+savefig(gcf, fullfile(figdir, [figname, '.fig']));
+print(fullfile(figdir, figname), '-dpdf');
+print(fullfile(figdir, figname), '-dpng');

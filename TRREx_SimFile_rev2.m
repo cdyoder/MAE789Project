@@ -32,6 +32,10 @@ xdot(8) = u(3);
 xdot(9) = x(10);
 xdot(10) = u(4);
 
+xdot
+Ffr
+Fn
+keyboard
 
 if flag == 1
 	xdn = xdot;
